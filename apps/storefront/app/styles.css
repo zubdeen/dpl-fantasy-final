@@ -217,8 +217,7 @@ button {
   padding: 80px 24px 40px;
   background:
     radial-gradient(circle at 18% 10%, #244b3a88, transparent 34%),
-    radial-gradient(circle at 88% 86%, #1d415355, transparent 36%),
-    var(--bg);
+    radial-gradient(circle at 88% 86%, #1d415355, transparent 36%), var(--bg);
 }
 .login-brand {
   position: fixed;
@@ -295,7 +294,9 @@ button {
   background: #fff;
   color: #142033;
   font-weight: 700;
-  transition: transform 0.16s, box-shadow 0.16s;
+  transition:
+    transform 0.16s,
+    box-shadow 0.16s;
 }
 .login-card .google:hover,
 .login-card .google:focus-visible {
@@ -309,7 +310,9 @@ button {
   height: 22px;
   border-radius: 50%;
   color: #4285f4;
-  font: 700 16px Arial, sans-serif;
+  font:
+    700 16px Arial,
+    sans-serif;
 }
 .login-note {
   margin: 14px 0 22px;

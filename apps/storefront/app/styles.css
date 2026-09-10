@@ -16,6 +16,8 @@ html {
 }
 body {
   margin: 0;
+  width: 100%;
+  overflow-x: hidden;
   background: var(--bg);
   color: var(--text);
   font-family: "DM Sans", sans-serif;
@@ -994,6 +996,9 @@ footer a {
 /* Reference-inspired marketing and court-first fantasy additions */
 .marketing {
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 74% 15%, #244b3a55, transparent 30%), var(--bg);
 }

@@ -8,7 +8,9 @@ import "./styles.css";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function Page() {
+export default async function Page({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
+  const { code } = await searchParams;
+  if (code) redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
   const { data: { user } } = await (await serverSupabase()).auth.getUser();
   if (user) redirect("/dashboard");
   return <main className="marketing">

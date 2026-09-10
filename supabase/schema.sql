@@ -420,7 +420,7 @@ begin
   if v_manager.team_locked and p_lock then raise exception 'This team is permanently locked; use transfers or Wildcard'; end if;
   if v_manager.team_locked and not p_lock then
     if not public.fantasy_period_is_open(v_period) then raise exception 'Transfers open only after the active deadline ends'; end if;
-    select count(*) into v_transfer_count from public.fantasy_transfer_events where manager_id = auth.uid() and season = 'Season 05' and period = v_period;
+    select count(*) into v_transfer_count from public.fantasy_transfer_events where manager_id = auth.uid() and season = 'Season 05';
     if v_transfer_count >= 2 then raise exception 'Both free transfers have already been used'; end if;
     select coalesce(array_agg(x), '{}'::uuid[]) into v_removed from unnest(v_old_ids) x where not (x = any(p_player_ids));
     select coalesce(array_agg(x), '{}'::uuid[]) into v_added from unnest(p_player_ids) x where not (x = any(v_old_ids));
@@ -536,7 +536,7 @@ begin
   if v_manager.team_locked and p_lock then raise exception 'This team is permanently locked; use transfers or Wildcard'; end if;
   if v_manager.team_locked and not p_lock then
     if not public.fantasy_period_is_open(v_period) then raise exception 'Transfers open only after the active deadline ends'; end if;
-    select count(*) into v_transfer_count from public.fantasy_transfer_events where manager_id = auth.uid() and season = 'Season 05' and period = v_period;
+    select count(*) into v_transfer_count from public.fantasy_transfer_events where manager_id = auth.uid() and season = 'Season 05';
     if v_transfer_count >= 2 then raise exception 'Both free transfers have already been used'; end if;
     select coalesce(array_agg(x), '{}'::uuid[]) into v_removed from unnest(v_old_ids) x where not (x = any(p_player_ids));
     select coalesce(array_agg(x), '{}'::uuid[]) into v_added from unnest(p_player_ids) x where not (x = any(v_old_ids));

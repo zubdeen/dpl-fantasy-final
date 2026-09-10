@@ -212,6 +212,9 @@ button {
 
 .login {
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   display: grid;
   place-items: center;
   padding: 80px 24px 40px;
@@ -236,6 +239,8 @@ button {
 }
 .login-card {
   width: min(460px, 100%);
+  max-width: 100%;
+  min-width: 0;
   padding: 38px;
   border: 1px solid #ffffff24;
   border-radius: 20px;
@@ -321,14 +326,25 @@ button {
   font-size: 12px;
 }
 .login-card .login-toggle {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
+  min-height: 52px;
+  margin: 0 0 12px;
+  padding: 0 14px;
+  border: 1px solid #c7ff2180;
+  border-radius: 10px;
+  background: #c7ff2118;
   color: #d5e0e8;
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 700;
 }
 .login-card .login-toggle:hover,
 .login-card .login-toggle:focus-visible {
+  border-color: var(--lime);
+  background: #c7ff2130;
   color: var(--lime);
 }
 .login-message {
@@ -339,9 +355,12 @@ button {
   text-align: center;
 }
 @media (max-width: 600px) {
+  .login {
+    padding: 78px 16px 28px;
+  }
   .login-brand {
-    left: 20px;
-    right: 20px;
+    left: 16px;
+    right: 16px;
     justify-content: center;
   }
   .login-brand > span {

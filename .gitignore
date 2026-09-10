@@ -1,0 +1,7 @@
+node_modules
+.pnpm-store
+.next
+.turbo
+.env
+.env.local
+.vercel

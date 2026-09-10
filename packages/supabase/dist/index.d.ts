@@ -1,0 +1,1 @@
+export { browserSupabase } from "./browser";

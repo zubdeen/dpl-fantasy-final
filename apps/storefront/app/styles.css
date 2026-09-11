@@ -2499,3 +2499,95 @@ footer a {
 .court-player strong{background:#071b2bd9;text-shadow:0 1px 2px #000}
 .court-player small{color:#062039;background:#ffffffc9;padding:2px 5px;border-radius:4px}
 @media(max-width:500px){.padel-court{background-size:122.5% 117.9%}} */
+
+
+.account-edit {
+  display: block;
+  margin-top: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--lime);
+  font-size: 10px;
+  text-align: left;
+}
+.account-edit:hover,
+.account-edit:focus-visible {
+  text-decoration: underline;
+}
+.team-name-modal {
+  width: min(500px, 100%);
+}
+.team-name-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+  color: #d5e0e8;
+  font: 10px "DM Mono";
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.team-name-field input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid #ffffff2b;
+  border-radius: 10px;
+  outline: 0;
+  background: #081321;
+  color: var(--text);
+  font: 14px "DM Sans";
+  letter-spacing: normal;
+  text-transform: none;
+}
+.team-name-field input:focus {
+  border-color: var(--lime);
+  box-shadow: 0 0 0 3px #c7ff2125;
+}
+
+
+/* Keep account actions reachable on desktop when the sidebar content is taller than the viewport. */
+.sidebar {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #49647d transparent;
+}
+.account {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  padding-bottom: 12px;
+}
+.account > div {
+  min-width: 0;
+}
+.account-edit {
+  white-space: nowrap;
+}
+.logout-button {
+  margin-left: auto;
+}
+@media (min-width: 901px) {
+  .account {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+  }
+  .account .logout-button {
+    align-self: start;
+  }
+}
+
+
+/* Slightly wider separation for the two Star-tier court positions. */
+.row-star {
+  gap: clamp(102px, 17vw, 230px) !important;
+}
+@media (max-width: 900px) {
+  .row-star {
+    gap: 60px !important;
+  }
+}
+@media (max-width: 500px) {
+  .row-star {
+    gap: 38px !important;
+  }
+}

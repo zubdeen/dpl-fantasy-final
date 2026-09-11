@@ -558,3 +558,32 @@ begin
   return jsonb_build_object('ok', true, 'period', v_period, 'transfers_used', case when p_lock or not v_manager.team_locked then 0 else v_transfer_count + 1 end);
 end;
 $$;
+
+
+-- Managers may rename their own fantasy team without changing squad, lock, or transfer state.
+create or replace function public.update_fantasy_manager_name(p_team_name text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_team_name text := btrim(coalesce(p_team_name, ''));
+begin
+  if auth.uid() is null then raise exception 'Authentication required'; end if;
+  if char_length(v_team_name) < 2 then raise exception 'Team name must contain at least two characters'; end if;
+  if char_length(v_team_name) > 40 then raise exception 'Team name must be 40 characters or fewer'; end if;
+  update public.fantasy_managers
+    set team_name = v_team_name, updated_at = now()
+    where id = auth.uid();
+  if not found then raise exception 'Fantasy manager profile not found'; end if;
+  update public.profiles
+    set team_name = v_team_name
+    where id = auth.uid();
+  update auth.users
+    set raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || jsonb_build_object('team_name', v_team_name)
+    where id = auth.uid();
+  return jsonb_build_object('ok', true, 'team_name', v_team_name);
+end;
+$$;
+grant execute on function public.update_fantasy_manager_name(text) to authenticated;

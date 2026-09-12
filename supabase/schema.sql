@@ -420,7 +420,7 @@ begin
   if v_manager.team_locked and p_lock then raise exception 'This team is permanently locked; use transfers or Wildcard'; end if;
   if v_manager.team_locked and not p_lock then
     if not public.fantasy_period_is_open(v_period) then raise exception 'Transfers open only after the active deadline ends'; end if;
-    select count(*) into v_transfer_count from public.fantasy_transfer_events where manager_id = auth.uid() and season = 'Season 05';
+    select count(*) into v_transfer_count from public.fantasy_transfer_events where manager_id = auth.uid() and season = 'Season 05' and period = v_period;
     if v_transfer_count >= 2 then raise exception 'Both free transfers have already been used'; end if;
     select coalesce(array_agg(x), '{}'::uuid[]) into v_removed from unnest(v_old_ids) x where not (x = any(p_player_ids));
     select coalesce(array_agg(x), '{}'::uuid[]) into v_added from unnest(p_player_ids) x where not (x = any(v_old_ids));
@@ -527,6 +527,8 @@ declare
 begin
   if auth.uid() is null then raise exception 'Authentication required'; end if;
   if coalesce(array_length(p_player_ids, 1), 0) > 8 or coalesce(array_length(p_slots, 1), 0) <> coalesce(array_length(p_player_ids, 1), 0) then raise exception 'A fantasy squad may contain at most eight players and every player needs a slot'; end if;
+  if coalesce(array_length(p_player_ids, 1), 0) <> (select count(distinct player_id) from unnest(p_player_ids) as requested(player_id)) then raise exception 'A fantasy squad cannot contain duplicate players'; end if;
+  if coalesce(array_length(p_player_ids, 1), 0) <> (select count(*) from public.players where id = any(p_player_ids)) then raise exception 'Every selected player must exist'; end if;
   if p_captain_player_id is not null and not (p_captain_player_id = any(p_player_ids)) then raise exception 'Captain must be in the selected squad'; end if;
   select * into v_manager from public.fantasy_managers where id = auth.uid() for update;
   if not found then raise exception 'Fantasy manager profile not found'; end if;
@@ -536,7 +538,7 @@ begin
   if v_manager.team_locked and p_lock then raise exception 'This team is permanently locked; use transfers or Wildcard'; end if;
   if v_manager.team_locked and not p_lock then
     if not public.fantasy_period_is_open(v_period) then raise exception 'Transfers open only after the active deadline ends'; end if;
-    select count(*) into v_transfer_count from public.fantasy_transfer_events where manager_id = auth.uid() and season = 'Season 05';
+    select count(*) into v_transfer_count from public.fantasy_transfer_events where manager_id = auth.uid() and season = 'Season 05' and period = v_period;
     if v_transfer_count >= 2 then raise exception 'Both free transfers have already been used'; end if;
     select coalesce(array_agg(x), '{}'::uuid[]) into v_removed from unnest(v_old_ids) x where not (x = any(p_player_ids));
     select coalesce(array_agg(x), '{}'::uuid[]) into v_added from unnest(p_player_ids) x where not (x = any(v_old_ids));
@@ -587,3 +589,62 @@ begin
 end;
 $$;
 grant execute on function public.update_fantasy_manager_name(text) to authenticated;
+
+
+-- Keep denormalized cumulative totals aligned with weekly points.
+create or replace function public.sync_manager_gameweek_overall_points()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_manager_id uuid := coalesce(new.manager_id, old.manager_id);
+  v_season text := coalesce(new.season, old.season);
+begin
+  if pg_trigger_depth() > 1 then return coalesce(new, old); end if;
+  update public.fantasy_manager_gameweek_scores target
+  set overall_points = source.cumulative_points, updated_at = now()
+  from (
+    select manager_id, season, gameweek,
+      sum(points) over (partition by manager_id, season) as cumulative_points
+    from public.fantasy_manager_gameweek_scores
+    where manager_id = v_manager_id and season = v_season
+  ) source
+  where target.manager_id = source.manager_id and target.season = source.season and target.gameweek = source.gameweek;
+  return coalesce(new, old);
+end;
+$$;
+
+drop trigger if exists sync_manager_gameweek_overall_points on public.fantasy_manager_gameweek_scores;
+create trigger sync_manager_gameweek_overall_points
+after insert or update of points or delete on public.fantasy_manager_gameweek_scores
+for each row execute function public.sync_manager_gameweek_overall_points();
+
+
+-- New fixtures must belong to the active game week; existing fixtures may still
+-- be edited without changing their week.
+create or replace function public.guard_new_fixture_active_night()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if (tg_op = 'INSERT' or new.night is distinct from old.night)
+     and new.season = 'Season 05'
+     and not exists (
+       select 1 from public.fantasy_settings
+       where id = 'current'
+         and new.night = coalesce(gameweek, night)
+     ) then
+    raise exception 'New fixtures must use the active game week';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists guard_new_fixture_active_night on public.fantasy_fixtures;
+create trigger guard_new_fixture_active_night
+before insert or update of night on public.fantasy_fixtures
+for each row execute function public.guard_new_fixture_active_night();

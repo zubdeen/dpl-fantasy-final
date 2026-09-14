@@ -6,7 +6,11 @@ const DPL_LOGO_URL = "https://gtaiehdqxuqakrxetljb.supabase.co/storage/v1/object
 export const metadata: Metadata = {
   title: "DPL Admin | Botswana",
   description: "DPL Fantasy administration",
-  icons: { icon: DPL_LOGO_URL },
+  icons: {
+    icon: DPL_LOGO_URL,
+    shortcut: DPL_LOGO_URL,
+    apple: DPL_LOGO_URL,
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

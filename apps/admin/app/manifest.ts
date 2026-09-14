@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const DPL_LOGO_URL = "https://gtaiehdqxuqakrxetljb.supabase.co/storage/v1/object/public/team-logos/dpl%20logo%20(1).png";
+const DPL_LOGO_URL = "https://gtaiehdqxuqakrxetljb.supabase.co/storage/v1/object/public/team-logos/fantasy-logo.png";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {

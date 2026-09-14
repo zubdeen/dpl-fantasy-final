@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export const DPL_LOGO_URL = "https://gtaiehdqxuqakrxetljb.supabase.co/storage/v1/object/public/team-logos/fantasy-logo.jpg";
+export const DPL_LOGO_URL = "https://gtaiehdqxuqakrxetljb.supabase.co/storage/v1/object/public/team-logos/fantasy-logo.png";
 
 export function Logo() {
   return (

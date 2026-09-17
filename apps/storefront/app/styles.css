@@ -1931,6 +1931,16 @@ footer a {
   background: #fff;
   color: #081321;
 }
+.save-team {
+  background: #c7ff2118;
+  border: 1px solid #c7ff2166 !important;
+  color: var(--lime);
+}
+.save-team:disabled,
+.team-actions .primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .lock-team:disabled {
   opacity: 0.5;
   cursor: not-allowed;

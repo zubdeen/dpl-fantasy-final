@@ -1936,6 +1936,10 @@ footer a {
   border: 1px solid #c7ff2166 !important;
   color: var(--lime);
 }
+.transfer-cancel {
+  padding: 12px 14px;
+  color: #ffb0b0;
+}
 .save-team:disabled,
 .team-actions .primary:disabled {
   opacity: 0.5;

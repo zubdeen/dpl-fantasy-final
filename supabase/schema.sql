@@ -466,20 +466,82 @@ create or replace function public.use_fantasy_powerup(p_powerup text, p_night in
 returns jsonb
 language plpgsql security definer set search_path = public
 as $$
-declare v_period integer;
+declare
+  v_period integer;
+  v_old_week integer := 0;
+  v_new_week integer := 0;
+  v_raw integer;
+  v_points integer;
+  v_captain boolean;
+  v_boost boolean;
+  v_no_negative boolean;
+  v_player_id uuid;
 begin
   if auth.uid() is null then raise exception 'Authentication required'; end if;
+  if p_powerup not in ('diamond', 'no_negative', 'wildcard', 'diamond_boost') then raise exception 'Unknown power-up'; end if;
   v_period := coalesce(p_period, (select gameweek from public.fantasy_settings where id = 'current'), 1);
   if exists (select 1 from public.fantasy_settings s where s.id = 'current' and s.gameweek = v_period and now() >= coalesce(s.lock_at, s.deadline)) then raise exception 'Power-ups close when the active deadline starts'; end if;
   if exists (select 1 from public.fantasy_powerup_uses where manager_id = auth.uid() and season = 'Season 05' and powerup = p_powerup) then raise exception 'This power-up has already been used'; end if;
+  if p_powerup = 'diamond_boost' and p_captain_player_id is null then raise exception 'Triple Captain requires a captain'; end if;
+
   perform set_config('fantasy.internal_write', 'on', true);
-  insert into public.fantasy_powerup_uses(manager_id, powerup, season, night, captain_player_id) values (auth.uid(), p_powerup, 'Season 05', p_night, p_captain_player_id);
+  insert into public.fantasy_powerup_uses(manager_id, powerup, season, night, captain_player_id)
+  values (auth.uid(), p_powerup, 'Season 05', p_night, p_captain_player_id);
+
   if p_powerup = 'wildcard' then
     delete from public.fantasy_squads where manager_id = auth.uid() and season = 'Season 05';
     delete from public.fantasy_manager_lineups where manager_id = auth.uid() and season = 'Season 05' and period = v_period;
     update public.fantasy_managers set team_locked = false, wildcard_used = true, transfers_used = 0 where id = auth.uid();
+    return jsonb_build_object('ok', true, 'powerup', p_powerup, 'recalculated', false);
   end if;
-  return jsonb_build_object('ok', true, 'powerup', p_powerup);
+
+  select coalesce(sum(points), 0)::integer into v_old_week
+  from public.fantasy_manager_player_scores
+  where manager_id = auth.uid() and season = 'Season 05' and gameweek = p_night;
+
+  for v_player_id in
+    select distinct player_id from public.fantasy_manager_player_scores
+    where manager_id = auth.uid() and season = 'Season 05' and gameweek = p_night
+  loop
+    select coalesce(sum(calculated_points), 0)::integer into v_raw
+    from public.fantasy_fixture_player_points
+    where season = 'Season 05' and night = p_night and player_id = v_player_id;
+
+    select exists (
+      select 1 from public.fantasy_manager_lineups l
+      where l.manager_id = auth.uid() and l.player_id = v_player_id
+        and l.season = 'Season 05' and l.period = p_night and l.is_captain
+    ) or exists (
+      select 1 from public.fantasy_squads s
+      where s.manager_id = auth.uid() and s.player_id = v_player_id
+        and s.season = 'Season 05' and s.is_captain
+    ) into v_captain;
+
+    select exists (
+      select 1 from public.fantasy_powerup_uses p
+      where p.manager_id = auth.uid() and p.season = 'Season 05'
+        and p.night = p_night and p.powerup = 'no_negative'
+    ) into v_no_negative;
+    select exists (
+      select 1 from public.fantasy_powerup_uses p
+      where p.manager_id = auth.uid() and p.season = 'Season 05'
+        and p.night = p_night and p.powerup = 'diamond_boost'
+        and p.captain_player_id = v_player_id
+    ) into v_boost;
+
+    v_points := (case when v_no_negative then greatest(v_raw, 0) else v_raw end)
+      * (case when v_boost then 3 when v_captain then 2 else 1 end);
+    update public.fantasy_manager_player_scores
+    set points = v_points, updated_at = now()
+    where manager_id = auth.uid() and player_id = v_player_id
+      and season = 'Season 05' and gameweek = p_night;
+    v_new_week := v_new_week + v_points;
+  end loop;
+
+  update public.fantasy_manager_gameweek_scores
+  set points = v_new_week, overall_points = overall_points + (v_new_week - v_old_week), updated_at = now()
+  where manager_id = auth.uid() and season = 'Season 05' and gameweek = p_night;
+  return jsonb_build_object('ok', true, 'powerup', p_powerup, 'recalculated', true, 'week_points', v_new_week, 'delta', v_new_week - v_old_week);
 end;
 $$;
 

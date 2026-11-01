@@ -82,7 +82,7 @@ function Fixtures() {
       const base = allLedger.filter((point: any) => point.player_id === playerId && Number(point.night) === targetNight).reduce((total: number, point: any) => total + Number(point.calculated_points ?? 0), 0);
       const managerPowerups = allPowerups.filter((power: any) => power.manager_id === managerId && Number(power.night) === targetNight);
       const noNegative = managerPowerups.some((power: any) => power.powerup === "no_negative");
-      const boost = isCaptain && managerPowerups.some((power: any) => power.powerup === "diamond_boost" && (!power.captain_player_id || power.captain_player_id === playerId));
+      const boost = managerPowerups.some((power: any) => power.powerup === "diamond_boost" && power.captain_player_id === playerId);
       const protectedPoints = noNegative ? Math.max(0, base) : base;
       return protectedPoints * (boost ? 3 : isCaptain ? 2 : 1);
     };
